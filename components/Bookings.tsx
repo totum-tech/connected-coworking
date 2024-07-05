@@ -254,6 +254,26 @@ export default function Bookings() {
     handleClose();
   }
 
+  async function handleDeleteBooking() {
+    const confirmed = confirm('Are you sure you want to delete this booking?');
+    if (!confirmed) { return; }
+    if (!supabaseRef.current) { return; }
+
+    const { error } = await supabaseRef
+      .current
+      .from('bookings')
+      .delete()
+      .eq('id', editBookingParams.id)
+      .select()
+
+    if (error) {
+      alert('Something went wrong. Please try again.');
+    }
+
+    await fetchBookings();
+    handleClose();
+  }
+
   const handleClose = () => {
     setNewBookingParams(EMPTY_BOOKING);
     setEditBookingParams(EMPTY_BOOKING)
@@ -311,6 +331,7 @@ export default function Bookings() {
             value={editBookingParams}
             onChange={setEditBookingParams}
             onSubmit={handleUpdateBooking}
+            onDelete={handleDeleteBooking}
             onCancel={handleClose}
           />
         )}
