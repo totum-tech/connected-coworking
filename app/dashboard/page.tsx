@@ -19,7 +19,9 @@ export default async function ProtectedPage() {
       <div className="w-full">
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-screen-lg flex justify-between items-center py-3 text-sm">
-            <div />
+            <h1 className="text-lg">
+              Connected Coworking
+            </h1>
             <AuthButton />
           </div>
         </nav>

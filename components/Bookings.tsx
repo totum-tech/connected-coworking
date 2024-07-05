@@ -1,7 +1,7 @@
 "use client";
 import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
-import {addMinutes, isWeekend} from "date-fns";
+import {addMinutes, isBefore, isFuture, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
 import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
@@ -164,7 +164,6 @@ export default function Bookings() {
     const {data, error} = await supabase
       .from('bookings')
       .select(`*, resource:resources(id, name, image_url)`)
-      .eq('profile_id', user.id)
 
     if (error) {
       console.error('Error fetching bookings:', error.message);
@@ -280,7 +279,7 @@ export default function Bookings() {
       <WeekView
         initialDate={new Date()}
         weekStartsOn={1}
-        disabledDay={(date) => isWeekend(date)}
+        disabledCell={(date) => !isFuture(date)}
         // rendering of the events on the calendar is not dependent on cells but rather hours in a day
         hiddenHour={(date) => date.getHours() < 6 || date.getHours() > 18}
         onCellClick={(cell) => {

@@ -31,7 +31,7 @@ export default function EventGrid({
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${days.length * 2}, minmax(0, 1fr))`,
         gridTemplateRows: `repeat(${days[0].cells.length}, minmax(${rowHeight}px, 1fr))`,
       }}
     >
@@ -64,8 +64,8 @@ export default function EventGrid({
               style={{
                 gridRowStart: start - 12, // hardcoded because we start at 6am
                 gridRowEnd: end - 12,     // need a better way to find the grid coordinate for the time
-                gridColumnStart: getDay(event.startDate) - weekStartsOn + 1,
-                gridColumnEnd: "span 1",
+                gridColumnStart: (getDay(event.startDate) - weekStartsOn) * 2 + 1,
+                gridColumnEnd: "span 2",
               }}
             >
               <span
