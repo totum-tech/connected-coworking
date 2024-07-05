@@ -1,7 +1,7 @@
 "use client";
 import {useLayoutEffect, useState} from "react";
 import {createClient} from "@/utils/supabase/client";
-import {format, isSameDay, parseISO} from "date-fns";
+import {differenceInMinutes, format, isSameDay, parseISO} from "date-fns";
 import React from "react";
 
 async function fetchResource(id: string) {
@@ -37,11 +37,11 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
     const start = parseISO(event.start);
     const end = parseISO(event.end);
     const startHour = start.getHours(); // Adjust for 6 AM start
-    const endHour = end.getHours();
+    const duration = differenceInMinutes(end, start);
 
     return {
-      gridRowStart: startHour + 10,
-      gridRowEnd: `span ${Math.ceil(endHour - startHour) * 4}`,
+      gridRowStart: (startHour - 5 + 3 * (startHour - 6)),
+      gridRowEnd: `span ${(duration / 15)}`,
     };
   };
 
