@@ -22,10 +22,11 @@ export default function Login({
     });
 
     if (error) {
+      console.error('Hi', error.message)
       return redirect("/login?message=Could not authenticate user");
     }
 
-    return redirect("/protected");
+    return redirect("/dashboard");
   };
 
   const signUp = async (formData: FormData) => {
@@ -45,6 +46,7 @@ export default function Login({
     });
 
     if (error) {
+      console.error(error.message)
       return redirect("/login?message=Could not authenticate user");
     }
 

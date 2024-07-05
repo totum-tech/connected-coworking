@@ -6,9 +6,11 @@
     "start": "next start"
   },
   "dependencies": {
+    "@geist-ui/core": "^2.3.8",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "autoprefixer": "10.4.17",
+    "date-fns": "^3.6.0",
     "geist": "^1.2.1",
     "next": "latest",
     "postcss": "8.4.33",
