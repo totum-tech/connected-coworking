@@ -163,7 +163,7 @@ export default function Bookings() {
     const {data, error} = await supabase
       .from('bookings')
       .select(`*, resource:resources(id, name, image_url)`)
-      .eq('user_id', user.id)
+      .eq('profile_id', user.id)
 
     if (error) {
       console.error('Error fetching bookings:', error.message);
