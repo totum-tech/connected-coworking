@@ -4,70 +4,95 @@ import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
 import {addMinutes, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
-import {Modal, Button, Title, Textarea} from '@mantine/core'
+import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
+import {DateTimePicker, DateValue} from "@mantine/dates";
+import {SupabaseClient} from "@supabase/supabase-js";
 
-type NewBookingModalProps = {
-  initialValues: { start: Date, end: Date } | null
-  onOpen: () => void
-  onClose: () => void
-  visible: boolean
-}
-function NewBookingModal(props: NewBookingModalProps) {
-  const [notes, setNotes] = useState('');
-
-  function handleCancel() {
-    props.onClose()
-    setNotes('');
+function NewBookingForm(props: any) {
+  function handleChangePhonebooth(resourceId: string) {
+    props.onChange({ ...props.value, resourceId: Number(resourceId) })
   }
-  function handleSubmit() {
-    console.info('submit', { notes })
-    props.onClose()
+  function handleChangeNotes(notes: string) {
+    props.onChange({ ...props.value, notes })
+  }
+  function handleChangeStart(start: DateValue) {
+    props.onChange({ ...props.value, start })
+  }
+  function handleChangeEnd(end: DateValue) {
+    props.onChange({ ...props.value, end })
   }
   return (
-    <Modal opened={props.visible} onClose={props.onClose}>
-      <div className="flex flex-col">
+    <div className="flex flex-col">
+      <div className="mb-3">
+        <Title order={3}>Create a new booking</Title>
+        <Text size="md" c="dimmed">Use this form to book time in one of our call booths.</Text>
+      </div>
+      <div>
         <div className="mb-3">
-          <Title order={3}>Create a new booking</Title>
+          <Select
+            label="Room to book"
+            placeholder="Select a phone booth"
+            onChange={handleChangePhonebooth}
+            data={[
+              { label: '⚡️Power Phonebooth', value: '2' },
+              { label: '😎 Private Phonebooth', value: '1' },
+            ]}
+          />
         </div>
-        <div>
-          <div className="mb-3">
-            <Textarea
-              placeholder="Notes about this booking"
-              label="Notes"
-              value={notes}
-              onChange={(event) => setNotes(event.currentTarget.value)}
+        <div className="flex flex-row pb-3">
+          <div className="flex-1 pr-3">
+            <DateTimePicker
+              valueFormat="dddd, MMMM D hh:mm A"
+              label="Start"
+              placeholder="Pick date and time"
+              value={props.value.start} onChange={handleChangeStart}
             />
           </div>
-          <div className="mb-3">
-            <Title order={5}>Start Time</Title>
-            {props.initialValues?.start?.toString()}
-          </div>
-          <div className="mb-3">
-            <Title order={5}>End Time</Title>
-            {props.initialValues?.end?.toString()}
+          <div className="flex-1">
+            <DateTimePicker
+              valueFormat="dddd, MMMM D hh:mm A"
+              label="End"
+              placeholder="Pick date and time"
+              value={props.value.end} onChange={handleChangeEnd}
+            />
           </div>
         </div>
-        <div className="flex flex-row justify-end">
-          <Button classNames={{ root: 'mr-1' }} radius="xl" variant="subtle" onClick={handleCancel}>Cancel</Button>
-          <Button radius="xl" onClick={handleSubmit}>Submit</Button>
+        <div className="mb-3">
+          <Textarea
+            placeholder="Notes about this booking"
+            label="Notes"
+            value={props.value?.notes}
+            onChange={(event) => handleChangeNotes(event.currentTarget.value)}
+          />
         </div>
       </div>
-    </Modal>
-  );
+      <div className="flex flex-row justify-end">
+        <Button classNames={{ root: 'mr-1' }} radius="xl" variant="subtle" onClick={props.onCancel}>Cancel</Button>
+        <Button radius="xl" onClick={props.onSubmit}>Submit</Button>
+      </div>
+    </div>
+  )
 }
 
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
   const [opened, { open, close }] = useDisclosure(false)
-  const [initialBookingParams, setInitialBookingParams] = useState<{ start: Date, end: Date } | null>(null);
+  const [newBookingParams, setNewBookingParams] = useState<{ resourceId: number | null, notes: string, start: DateValue, end: DateValue }>({ resourceId: null, notes: '', start: null, end: null })
+  const supabaseRef = React.useRef<SupabaseClient>();
+
+  useEffect(() => {
+    if (supabaseRef.current) return;
+    supabaseRef.current = createClient();
+  }, [supabaseRef]);
 
   const fetchBookings = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    if (!supabaseRef.current) { return; }
+    const { data: { user } } = await supabaseRef.current.auth.getUser();
 
     if (!user) { return; }
 
-    const {data, error} = await supabase
+    const {data, error} = await supabaseRef
+      .current
       .from('bookings')
       .select(`*, resource:resources(id, name, image_url)`)
       .eq('user_id', user.id)
@@ -81,17 +106,49 @@ export default function Bookings() {
 
   const handleStartCreate = (cell?: {date: Date, hour: string, minute: string, hourAndMinute: string, disabled: boolean}) => {
     if (cell) {
-      setInitialBookingParams({
+      setNewBookingParams({
+        resourceId: null,
+        notes: '',
         start: cell.date,
-        end: addMinutes(cell.date, 30)
+        end: addMinutes(cell.date, 30),
       });
     }
     open();
   }
 
+  async function handleSubmit() {
+    if (!supabaseRef.current) { return; }
+
+    console.info(newBookingParams);
+    const { data, error } = await supabaseRef
+      .current
+      .from('bookings')
+      .insert([
+        {
+          resource_id: newBookingParams.resourceId,
+          start: newBookingParams.start,
+          end: newBookingParams.end,
+          notes: newBookingParams.notes,
+        },
+      ])
+      .select()
+
+    if (error) {
+      alert('Something went wrong. Please try again.');
+    }
+
+    await fetchBookings();
+    handleClose();
+  }
+
   const handleClose = () => {
+    setNewBookingParams({
+      resourceId: null,
+      notes: '',
+      start: null,
+      end: null,
+    });
     close();
-    setInitialBookingParams(null);
   }
 
   useEffect(() => {
@@ -123,7 +180,18 @@ export default function Bookings() {
         }))
         }
       />
-      <NewBookingModal initialValues={initialBookingParams} onOpen={open} onClose={handleClose} visible={opened} />
+      <Modal
+        onClose={handleClose}
+        opened={opened}
+        size="lg"
+      >
+        <NewBookingForm
+          value={newBookingParams}
+          onChange={setNewBookingParams}
+          onSubmit={handleSubmit}
+          onCancel={handleClose}
+        />
+      </Modal>
     </div>
 
   );

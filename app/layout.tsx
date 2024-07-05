@@ -1,6 +1,7 @@
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 import Entry from "@/app/entry";
 import {ColorSchemeScript} from "@mantine/core";
 
