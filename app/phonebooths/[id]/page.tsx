@@ -74,6 +74,11 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
             className="col-start-2 col-end-2 bg-blue-100 border border-blue-200 rounded p-2 overflow-hidden z-10"
             style={getEventStyle(event)}
           >
+            <p className="text-blue-500 text-xs">
+              {format(new Date(event.start), "h:mm a", {})}
+              -
+              {format(new Date(event.end), "h:mm a", {})}
+            </p>
             <h3 className="font-semibold text-sm">{`${event.profile?.first_name} ${event.profile?.last_name}`}</h3>
             <p className="text-xs text-gray-600 truncate">{event.notes}</p>
           </div>
