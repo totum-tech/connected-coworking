@@ -1,13 +1,65 @@
 "use client";
 import {createClient} from "@/utils/supabase/client";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
-import {isWeekend} from "date-fns";
-import {Modal, useModal} from '@geist-ui/core'
+import {addMinutes, isWeekend} from "date-fns";
+import { useDisclosure } from '@mantine/hooks'
+import {Modal, Button, Title, Textarea} from '@mantine/core'
+
+type NewBookingModalProps = {
+  initialValues: { start: Date, end: Date } | null
+  onOpen: () => void
+  onClose: () => void
+  visible: boolean
+}
+function NewBookingModal(props: NewBookingModalProps) {
+  const [notes, setNotes] = useState('');
+
+  function handleCancel() {
+    props.onClose()
+    setNotes('');
+  }
+  function handleSubmit() {
+    console.info('submit', { notes })
+    props.onClose()
+  }
+  return (
+    <Modal opened={props.visible} onClose={props.onClose}>
+      <div className="flex flex-col">
+        <div className="mb-3">
+          <Title order={3}>Create a new booking</Title>
+        </div>
+        <div>
+          <div className="mb-3">
+            <Textarea
+              placeholder="Notes about this booking"
+              label="Notes"
+              value={notes}
+              onChange={(event) => setNotes(event.currentTarget.value)}
+            />
+          </div>
+          <div className="mb-3">
+            <Title order={5}>Start Time</Title>
+            {props.initialValues?.start?.toString()}
+          </div>
+          <div className="mb-3">
+            <Title order={5}>End Time</Title>
+            {props.initialValues?.end?.toString()}
+          </div>
+        </div>
+        <div className="flex flex-row justify-end">
+          <Button classNames={{ root: 'mr-1' }} radius="xl" variant="subtle" onClick={handleCancel}>Cancel</Button>
+          <Button radius="xl" onClick={handleSubmit}>Submit</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
-  const { visible, setVisible, bindings } = useModal()
+  const [opened, { open, close }] = useDisclosure(false)
+  const [initialBookingParams, setInitialBookingParams] = useState<{ start: Date, end: Date } | null>(null);
 
   const fetchBookings = async () => {
     const supabase = createClient();
@@ -20,7 +72,6 @@ export default function Bookings() {
       .select(`*, resource:resources(id, name, image_url)`)
       .eq('user_id', user.id)
 
-    console.info('fetched', data)
     if (error) {
       console.error('Error fetching bookings:', error.message);
       return;
@@ -28,8 +79,19 @@ export default function Bookings() {
     setBookings(data);
   }
 
-  const handleStartCreate = () => {
-    setVisible(true)
+  const handleStartCreate = (cell?: {date: Date, hour: string, minute: string, hourAndMinute: string, disabled: boolean}) => {
+    if (cell) {
+      setInitialBookingParams({
+        start: cell.date,
+        end: addMinutes(cell.date, 30)
+      });
+    }
+    open();
+  }
+
+  const handleClose = () => {
+    close();
+    setInitialBookingParams(null);
   }
 
   useEffect(() => {
@@ -40,7 +102,7 @@ export default function Bookings() {
     <div className="flex flex-col max-w-screen-2xl">
       <div className="flex flex-row items-start justify-between w-full">
         <h2 className="font-bold text-4xl mb-4">Your Bookings</h2>
-        <button className="text-foreground/80 font-bold hover:underline" onPointerDown={handleStartCreate}>
+        <button className="text-foreground/80 font-bold hover:underline" onPointerDown={() => handleStartCreate()}>
           Add a booking
         </button>
       </div>
@@ -61,15 +123,7 @@ export default function Bookings() {
         }))
         }
       />
-      <Modal {...bindings}>
-        <Modal.Title>Modal</Modal.Title>
-        <Modal.Subtitle>This is a modal</Modal.Subtitle>
-        <Modal.Content>
-          <p>Some content contained within the modal.</p>
-        </Modal.Content>
-        <Modal.Action passive onClick={() => setVisible(false)}>Cancel</Modal.Action>
-        <Modal.Action>Submit</Modal.Action>
-      </Modal>
+      <NewBookingModal initialValues={initialBookingParams} onOpen={open} onClose={handleClose} visible={opened} />
     </div>
 
   );

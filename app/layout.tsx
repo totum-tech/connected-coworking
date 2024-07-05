@@ -1,6 +1,8 @@
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
+import '@mantine/core/styles.css';
 import Entry from "@/app/entry";
+import {ColorSchemeScript} from "@mantine/core";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -20,6 +22,9 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={GeistSans.className}>
+      <head>
+        <ColorSchemeScript defaultColorScheme="auto" />
+      </head>
       <Entry children={children} />
     </html>
   );

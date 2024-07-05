@@ -27,7 +27,6 @@ export default function EventGrid({
   rowHeight: number;
   onEventClick?: (event: Event) => void;
 }) {
-  console.info('events', events)
   return (
     <div
       style={{
@@ -58,7 +57,6 @@ export default function EventGrid({
                 rowHeight) %
             rowHeight;
 
-          console.info('Event', event, { start, end })
           return (
             <div
               key={event.id}
