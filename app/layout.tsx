@@ -24,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={GeistSans.className}>
       <head>
+        <title>{metadata.title}</title>
         <ColorSchemeScript defaultColorScheme="auto" />
       </head>
       <Entry children={children} />

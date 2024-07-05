@@ -1,12 +1,11 @@
 "use client";
-import {createClient} from "@/utils/supabase/client";
 import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
 import {addMinutes, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
 import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
-import {SupabaseClient} from "@supabase/supabase-js";
+import {useSupabase} from "@/utils/supabase/useSupabase";
 
 function EditBookingForm(props: any) {
   function handleChangePhonebooth(resourceId: string) {
@@ -149,26 +148,19 @@ function NewBookingForm(props: any) {
 const EMPTY_BOOKING = { resourceId: null, notes: '', start: null, end: null }
 
 export default function Bookings() {
+  const supabase = useSupabase();
   const [bookings, setBookings] = useState([]);
   const [opened, { open, close }] = useDisclosure(false)
   const [activeForm, setActiveForm] = useState<'new' | 'edit'>('new');
   const [newBookingParams, setNewBookingParams] = useState<{ resourceId: number | null, notes: string, start: DateValue, end: DateValue }>(EMPTY_BOOKING)
   const [editBookingParams, setEditBookingParams] = useState<{ id?: number, resourceId: number | null, notes: string, start: DateValue, end: DateValue }>(EMPTY_BOOKING)
-  const supabaseRef = React.useRef<SupabaseClient>();
-
-  useEffect(() => {
-    if (supabaseRef.current) return;
-    supabaseRef.current = createClient();
-  }, [supabaseRef]);
 
   const fetchBookings = async () => {
-    if (!supabaseRef.current) { return; }
-    const { data: { user } } = await supabaseRef.current.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) { return; }
 
-    const {data, error} = await supabaseRef
-      .current
+    const {data, error} = await supabase
       .from('bookings')
       .select(`*, resource:resources(id, name, image_url)`)
       .eq('user_id', user.id)
@@ -197,7 +189,7 @@ export default function Bookings() {
     setEditBookingParams({
       id: event.id,
       resourceId: event.resourceId,
-      notes: event.title,
+      notes: event.notes,
       start: event.startDate,
       end: event.endDate,
     });
@@ -230,10 +222,7 @@ export default function Bookings() {
   }
 
   async function handleUpdateBooking() {
-    if (!supabaseRef.current) { return; }
-
-    const { data, error } = await supabaseRef
-      .current
+    const { data, error } = await supabase
       .from('bookings')
       .update([
         {
@@ -257,10 +246,8 @@ export default function Bookings() {
   async function handleDeleteBooking() {
     const confirmed = confirm('Are you sure you want to delete this booking?');
     if (!confirmed) { return; }
-    if (!supabaseRef.current) { return; }
 
-    const { error } = await supabaseRef
-      .current
+    const { error } = await supabase
       .from('bookings')
       .delete()
       .eq('id', editBookingParams.id)
@@ -307,6 +294,7 @@ export default function Bookings() {
         events={bookings.map(booking => ({
           id: booking.id,
           title: booking.resource.name,
+          notes: booking.notes,
           resourceId: booking.resource.id,
           startDate: new Date(booking.start),
           endDate: new Date(booking.end),

@@ -34,6 +34,7 @@ export default function useWeekView({
       disabledCell?: (date: Date) => boolean;
       disabledDay?: (date: Date) => boolean;
       disabledWeek?: (startDayOfWeek: Date) => boolean;
+      hiddenHour? : (date: Date) => boolean;
     }
   | undefined = {}) {
   const [startOfTheWeek, setStartOfTheWeek] = useState(
