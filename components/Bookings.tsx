@@ -1,7 +1,7 @@
 "use client";
 import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
-import {addMinutes, isBefore, isFuture, isWeekend} from "date-fns";
+import {addMinutes, isAfter, isBefore, isFuture, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
 import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
@@ -92,6 +92,29 @@ function NewBookingForm(props: any) {
   function handleChangeEnd(end: DateValue) {
     props.onChange({ ...props.value, end })
   }
+  function isValid(value: any) {
+    if (!value.resourceId) {
+      console.info('No phone booth selected')
+      return false
+    }
+    if (!value.start) {
+      console.info('No start date selected')
+      return false;
+    }
+    if (!value.end) {
+      console.info('No end date selected')
+      return false;
+    }
+    if (!isFuture(value.start)) {
+      console.info('Start date past')
+      return false;
+    }
+    if (!isAfter(value.end, value.start)) {
+      console.info('End date invalid')
+      return false;
+    }
+    return true;
+  }
 
   return (
     <div className="flex flex-col">
@@ -140,7 +163,7 @@ function NewBookingForm(props: any) {
       </div>
       <div className="flex flex-row justify-end">
         <Button classNames={{ root: 'mr-1' }} radius="xl" variant="subtle" onClick={props.onCancel}>Cancel</Button>
-        <Button radius="xl" onClick={props.onSubmit}>Submit</Button>
+        <Button radius="xl" disabled={!isValid(props.value)} onClick={props.onSubmit}>Submit</Button>
       </div>
     </div>
   )
