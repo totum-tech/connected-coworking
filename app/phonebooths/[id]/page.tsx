@@ -1,8 +1,7 @@
 "use client";
-import {useLayoutEffect, useState} from "react";
+import React, {useLayoutEffect, useState} from "react";
 import {createClient} from "@/utils/supabase/client";
 import {differenceInMinutes, format, isSameDay, parseISO} from "date-fns";
-import React from "react";
 
 async function fetchResource(id: string) {
   const supabase = createClient();
@@ -46,13 +45,13 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg">
+    <div className="bg-white rounded-xl drop-shadow-lg overflow-hidden">
       <div className="p-4 bg-gray-100 border-b">
         <h2 className="text-xl font-semibold">{format(currentDate, 'MMMM d, yyyy')}</h2>
         <p className="text-gray-600">{format(currentDate, 'EEEE')}</p>
       </div>
 
-      <div className="grid grid-cols-[4rem_1fr] grid-rows-[repeat(52,2rem)] gap-0 relative">
+      <div className="grid grid-cols-[4rem_1fr] grid-rows-[repeat(52,1.24rem)] gap-0 relative">
 
         <div className="absolute -left-2 right-0 flex flex-row items-center">
           <div className="bg-amber-500 rounded-full h-4 w-4"></div>
@@ -111,7 +110,6 @@ export default function ShowPhoneBooth(props: any) {
       <div className="flex flex-col w-full items-start max-w-screen-xl">
         <h1 className="text-3xl mb-3">{resource.name}</h1>
         <div className="max-w-screen-lg flex-1 w-full">
-          <h3 className="text-xl mb-2">Bookings</h3>
           <Calendar currentDate={new Date()} events={bookings} />
         </div>
       </div>

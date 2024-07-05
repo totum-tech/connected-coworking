@@ -50,7 +50,7 @@ export default function WeekView({
   });
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-white p-3 rounded-xl drop-shadow-lg">
       <Header
         title={viewTitle}
         onNext={nextWeek}

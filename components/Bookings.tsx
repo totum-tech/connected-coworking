@@ -92,6 +92,7 @@ function NewBookingForm(props: any) {
   function handleChangeEnd(end: DateValue) {
     props.onChange({ ...props.value, end })
   }
+
   return (
     <div className="flex flex-col">
       <div className="mb-3">
@@ -271,12 +272,10 @@ export default function Bookings() {
   }, [])
 
   return (
-    <div className="flex flex-col max-w-screen-2xl">
+    <div className="w-full max-w-screen-2xl">
       <div className="flex flex-row items-start justify-between w-full">
         <h2 className="font-bold text-4xl mb-4">Your Bookings</h2>
-        <button className="text-foreground/80 font-bold hover:underline" onPointerDown={() => handleStartCreate()}>
-          Add a booking
-        </button>
+        <Button onClick={() => handleStartCreate()}>Book a phone booth</Button>
       </div>
       <WeekView
         initialDate={new Date()}

@@ -24,7 +24,7 @@ export default function Header({
   onNext?: () => void;
 }) {
   return (
-    <header className="flex items-center justify-between bg-slate-50 border-b px-6 py-4 h-16">
+    <header className="flex items-center justify-between border-b px-6 py-4 h-16">
       <h1 className="flex items-center gap-3 text-base font-semibold text-slate-600">
         {title}
         {showTodayButton &&
