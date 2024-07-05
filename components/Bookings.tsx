@@ -8,6 +8,78 @@ import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
 import {SupabaseClient} from "@supabase/supabase-js";
 
+function EditBookingForm(props: any) {
+  function handleChangePhonebooth(resourceId: string) {
+    props.onChange({ ...props.value, resourceId: Number(resourceId) })
+  }
+  function handleChangeNotes(notes: string) {
+    props.onChange({ ...props.value, notes })
+  }
+  function handleChangeStart(start: DateValue) {
+    props.onChange({ ...props.value, start })
+  }
+  function handleChangeEnd(end: DateValue) {
+    props.onChange({ ...props.value, end })
+  }
+  return (
+    <div className="flex flex-col">
+      <div className="mb-3">
+        <Title order={3}>Edit a booking</Title>
+        <Text size="md" c="dimmed">Use this form to edit an existing booking.</Text>
+      </div>
+      <div>
+        <div className="mb-3">
+          <Select
+            label="Room to book"
+            placeholder="Select a phone booth"
+            onChange={handleChangePhonebooth}
+            value={String(props.value.resourceId)}
+            data={[
+              { label: '⚡️Power Phonebooth', value: '2' },
+              { label: '😎 Private Phonebooth', value: '1' },
+            ]}
+          />
+        </div>
+        <div className="flex flex-row pb-3">
+          <div className="flex-1 pr-3">
+            <DateTimePicker
+              valueFormat="dddd, MMMM D hh:mm A"
+              label="Start"
+              placeholder="Pick date and time"
+              value={props.value.start} onChange={handleChangeStart}
+            />
+          </div>
+          <div className="flex-1">
+            <DateTimePicker
+              valueFormat="dddd, MMMM D hh:mm A"
+              label="End"
+              placeholder="Pick date and time"
+              value={props.value.end} onChange={handleChangeEnd}
+            />
+          </div>
+        </div>
+        <div className="mb-3">
+          <Textarea
+            placeholder="Notes about this booking"
+            label="Notes"
+            value={props.value?.notes}
+            onChange={(event) => handleChangeNotes(event.currentTarget.value)}
+          />
+        </div>
+      </div>
+      <div className="flex flex-row justify-between">
+        <div>
+          <Button radius="xl" color="red" onClick={props.onDelete}>Delete</Button>
+        </div>
+        <div>
+          <Button classNames={{ root: 'mr-1' }} radius="xl" variant="subtle" onClick={props.onCancel}>Cancel</Button>
+          <Button radius="xl" onClick={props.onSubmit}>Update Booking</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function NewBookingForm(props: any) {
   function handleChangePhonebooth(resourceId: string) {
     props.onChange({ ...props.value, resourceId: Number(resourceId) })
@@ -74,10 +146,14 @@ function NewBookingForm(props: any) {
   )
 }
 
+const EMPTY_BOOKING = { resourceId: null, notes: '', start: null, end: null }
+
 export default function Bookings() {
   const [bookings, setBookings] = useState([]);
   const [opened, { open, close }] = useDisclosure(false)
-  const [newBookingParams, setNewBookingParams] = useState<{ resourceId: number | null, notes: string, start: DateValue, end: DateValue }>({ resourceId: null, notes: '', start: null, end: null })
+  const [activeForm, setActiveForm] = useState<'new' | 'edit'>('new');
+  const [newBookingParams, setNewBookingParams] = useState<{ resourceId: number | null, notes: string, start: DateValue, end: DateValue }>(EMPTY_BOOKING)
+  const [editBookingParams, setEditBookingParams] = useState<{ id?: number, resourceId: number | null, notes: string, start: DateValue, end: DateValue }>(EMPTY_BOOKING)
   const supabaseRef = React.useRef<SupabaseClient>();
 
   useEffect(() => {
@@ -113,13 +189,25 @@ export default function Bookings() {
         end: addMinutes(cell.date, 30),
       });
     }
+    setActiveForm('new');
+    open();
+  }
+
+  const handleStartEdit = (event: { id: number, resourceId: number, title: string, notes: string, startDate: Date, endDate: Date }) => {
+    setEditBookingParams({
+      id: event.id,
+      resourceId: event.resourceId,
+      notes: event.title,
+      start: event.startDate,
+      end: event.endDate,
+    });
+    setActiveForm('edit');
     open();
   }
 
   async function handleSubmit() {
     if (!supabaseRef.current) { return; }
 
-    console.info(newBookingParams);
     const { data, error } = await supabaseRef
       .current
       .from('bookings')
@@ -141,13 +229,34 @@ export default function Bookings() {
     handleClose();
   }
 
+  async function handleUpdateBooking() {
+    if (!supabaseRef.current) { return; }
+
+    const { data, error } = await supabaseRef
+      .current
+      .from('bookings')
+      .update([
+        {
+          resource_id: editBookingParams.resourceId,
+          start: editBookingParams.start,
+          end: editBookingParams.end,
+          notes: editBookingParams.notes,
+        },
+      ])
+      .eq('id', editBookingParams.id)
+      .select()
+
+    if (error) {
+      alert('Something went wrong. Please try again.');
+    }
+
+    await fetchBookings();
+    handleClose();
+  }
+
   const handleClose = () => {
-    setNewBookingParams({
-      resourceId: null,
-      notes: '',
-      start: null,
-      end: null,
-    });
+    setNewBookingParams(EMPTY_BOOKING);
+    setEditBookingParams(EMPTY_BOOKING)
     close();
   }
 
@@ -172,9 +281,13 @@ export default function Bookings() {
         onCellClick={(cell) => {
           handleStartCreate(cell)
         }}
+        onEventClick={(event) => {
+          handleStartEdit(event)
+        }}
         events={bookings.map(booking => ({
           id: booking.id,
           title: booking.resource.name,
+          resourceId: booking.resource.id,
           startDate: new Date(booking.start),
           endDate: new Date(booking.end),
         }))
@@ -185,12 +298,22 @@ export default function Bookings() {
         opened={opened}
         size="lg"
       >
-        <NewBookingForm
-          value={newBookingParams}
-          onChange={setNewBookingParams}
-          onSubmit={handleSubmit}
-          onCancel={handleClose}
-        />
+        {activeForm === 'new' && (
+          <NewBookingForm
+            value={newBookingParams}
+            onChange={setNewBookingParams}
+            onSubmit={handleSubmit}
+            onCancel={handleClose}
+          />
+        )}
+        {activeForm === 'edit' && (
+          <EditBookingForm
+            value={editBookingParams}
+            onChange={setEditBookingParams}
+            onSubmit={handleUpdateBooking}
+            onCancel={handleClose}
+          />
+        )}
       </Modal>
     </div>
 
