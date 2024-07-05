@@ -11,7 +11,7 @@ async function fetchResource(id: string) {
     .select(`*`)
     .eq('id', Number(id))
 
-  if (error) { throw new Error(error) }
+  if (error) { throw new Error(error.message) }
   return data[0]
 }
 
@@ -26,7 +26,7 @@ async function fetchBookings(id: string) {
       profile:profiles(id, first_name, last_name)`)
     .eq('resource_id', Number(id))
 
-  if (error) { throw new Error(error) }
+  if (error) { throw new Error(error.message) }
   return data
 }
 
@@ -83,9 +83,12 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
   );
 };
 
+type Resource = any;
+type Booking = any;
+
 export default function ShowPhoneBooth(props: any) {
-  const [resource, setResource] = useState(null)
-  const [bookings, setBookings] = useState(null)
+  const [resource, setResource] = useState<Resource | null >(null)
+  const [bookings, setBookings] = useState<Booking[] | null >(null)
   useLayoutEffect(() => {
     if (!bookings) {
       console.info('Fetching Bookings')

@@ -8,7 +8,7 @@ import {DateTimePicker, DateValue} from "@mantine/dates";
 import {useSupabase} from "@/utils/supabase/useSupabase";
 
 function EditBookingForm(props: any) {
-  function handleChangePhonebooth(resourceId: string) {
+  function handleChangePhonebooth(resourceId: string | null) {
     props.onChange({ ...props.value, resourceId: Number(resourceId) })
   }
   function handleChangeNotes(notes: string) {
@@ -80,7 +80,7 @@ function EditBookingForm(props: any) {
 }
 
 function NewBookingForm(props: any) {
-  function handleChangePhonebooth(resourceId: string) {
+  function handleChangePhonebooth(resourceId: string | null) {
     props.onChange({ ...props.value, resourceId: Number(resourceId) })
   }
   function handleChangeNotes(notes: string) {
@@ -149,7 +149,7 @@ const EMPTY_BOOKING = { resourceId: null, notes: '', start: null, end: null }
 
 export default function Bookings() {
   const supabase = useSupabase();
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [opened, { open, close }] = useDisclosure(false)
   const [activeForm, setActiveForm] = useState<'new' | 'edit'>('new');
   const [newBookingParams, setNewBookingParams] = useState<{ resourceId: number | null, notes: string, start: DateValue, end: DateValue }>(EMPTY_BOOKING)
@@ -198,10 +198,9 @@ export default function Bookings() {
   }
 
   async function handleSubmit() {
-    if (!supabaseRef.current) { return; }
+    if (!supabase) { return; }
 
-    const { data, error } = await supabaseRef
-      .current
+    const { data, error } = await supabase
       .from('bookings')
       .insert([
         {
@@ -288,7 +287,7 @@ export default function Bookings() {
         onCellClick={(cell) => {
           handleStartCreate(cell)
         }}
-        onEventClick={(event) => {
+        onEventClick={(event: { id: number, title: string, resourceId: number, notes: string, startDate: Date, endDate: Date }) => {
           handleStartEdit(event)
         }}
         events={bookings.map(booking => ({

@@ -1,4 +1,4 @@
-import {Day, isSameWeek} from "date-fns";
+import {Day, isSameWeek, Locale} from "date-fns";
 
 import useWeekView, { Cell } from "./use-weekview";
 import Header from "./header";
@@ -6,12 +6,7 @@ import DaysHeader from "./days-header";
 import Grid from "./grid";
 import EventGrid from "./event-grid";
 
-export type Event = {
-  id: string;
-  title: string;
-  startDate: Date;
-  endDate: Date;
-};
+export type Event = { id: number, title: string, resourceId: number, notes: string, startDate: Date, endDate: Date }
 
 export default function WeekView({
   initialDate,
