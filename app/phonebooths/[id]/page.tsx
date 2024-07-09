@@ -1,5 +1,5 @@
 "use client";
-import React, {useLayoutEffect, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {createClient} from "@/utils/supabase/client";
 import {differenceInMinutes, format, isSameDay, parseISO} from "date-fns";
 
@@ -30,6 +30,9 @@ async function fetchBookings(id: string) {
 }
 
 const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date }) => {
+  const calendarRef = useRef<HTMLElement>(null);
+  const [calendarHeight, setCalendarHeight] = useState(0);
+  const [timeIndicatorPosition, setTimeIndicatorPosition] = useState(0);
   const hours = Array.from({ length: 13 }, (_, i) => i + 6); // 6 AM to 5 PM
 
   const getEventStyle = (event: any) => {
@@ -44,16 +47,40 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
     };
   };
 
+  const calculateAndSetIndicatorPosition = useCallback(() => {
+    console.info('setting indicator position');
+    const currentHour = new Date().getHours();
+    const currentMinute = new Date().getMinutes();
+    const minuteOfDay = currentHour * 60 + currentMinute;
+
+    if (minuteOfDay < 360 || minuteOfDay > 1080) { return }
+    const segmentSize = (calendarHeight / 780 /* minutes in 13 hours */);
+    setTimeIndicatorPosition((minuteOfDay - 360) * segmentSize);
+  }, [calendarHeight, setTimeIndicatorPosition]);
+
+  useEffect(() => {
+    if (calendarRef.current === null) {
+      return
+    };
+    setCalendarHeight(calendarRef.current.getBoundingClientRect().height);
+  }, [calendarRef])
+
+  useEffect(() => {
+    if (!calendarHeight) { return; }
+    calculateAndSetIndicatorPosition();
+    const interval = setInterval(calculateAndSetIndicatorPosition, 60000);
+    return () => clearInterval(interval);
+  }, [calendarHeight])
+
   return (
-    <div className="bg-white rounded-xl drop-shadow-lg overflow-hidden">
+    <div className="bg-white rounded-xl drop-shadow-lg">
       <div className="p-4 bg-gray-100 border-b">
         <h2 className="text-xl font-semibold">{format(currentDate, 'MMMM d, yyyy')}</h2>
         <p className="text-gray-600">{format(currentDate, 'EEEE')}</p>
       </div>
 
-      <div className="grid grid-cols-[4rem_1fr] grid-rows-[repeat(52,1.24rem)] gap-0 relative">
-
-        <div className="absolute -left-2 right-0 flex flex-row items-center">
+      <div ref={calendarRef} className="grid grid-cols-[4rem_1fr] grid-rows-[repeat(52,1.24rem)] gap-0 relative">
+        <div className="absolute -left-2 right-0 flex flex-row items-center z-100" style={{ top: timeIndicatorPosition }}>
           <div className="bg-amber-500 rounded-full h-4 w-4"></div>
           <div className="w-full h-1 bg-amber-500"></div>
         </div>
@@ -70,7 +97,7 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
         {events.filter(event => isSameDay(parseISO(event.start), currentDate)).map((event, index) => (
           <div
             key={index}
-            className="col-start-2 col-end-2 bg-blue-100 border border-blue-200 rounded p-2 overflow-hidden z-10"
+            className="col-start-2 col-end-2 bg-blue-100 border border-blue-200 rounded p-2 overflow-hidden z-1"
             style={getEventStyle(event)}
           >
             <p className="text-blue-500 text-xs">
