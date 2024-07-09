@@ -1,7 +1,7 @@
 "use client";
 import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
-import {addDays, addMinutes, areIntervalsOverlapping, isAfter, isBefore, isFuture, isWeekend} from "date-fns";
+import {addDays, addMinutes, areIntervalsOverlapping, Interval, isAfter, isBefore, isFuture, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
 import {Modal, Button, Title, Textarea, Text, Select, Drawer} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
@@ -220,22 +220,21 @@ export default function Bookings() {
     open();
   }
 
-  function getConflictingBookings(newBookingParams: { resourceId: number | null, start: Date, end: Date }, bookings: any[]) {
+  function getConflictingBookings(bookingIntervalToCheck: Interval, bookings: any[]) {
     return bookings.filter(booking => areIntervalsOverlapping(
-      { start: newBookingParams.start, end: newBookingParams.end },
+      bookingIntervalToCheck,
       { start: new Date(booking.start), end: new Date(booking.end)
       }));
   }
 
   async function handleSubmit() {
     if (!supabase) { return; }
-
-    if (newBookingParams.start === null || newBookingParams.end === null) {
+    else if (!newBookingParams.start || !newBookingParams.end) {
       return;
     }
 
     const tomorrow = addDays(new Date(), 1).toISOString();
-    console.info({ start: newBookingParams.start.toISOString(), end: newBookingParams.end.toISOString() })
+
     const { data: bookingsForRoomToday, error: conflictError } = await supabase
       .from('bookings')
       .select('*')
@@ -243,7 +242,11 @@ export default function Bookings() {
       .gte('end', newBookingParams.start.toISOString())
       .lte('end', tomorrow)
 
-    const conflictingBookings = getConflictingBookings(newBookingParams, bookingsForRoomToday);
+    const conflictingBookings = getConflictingBookings(
+      { start: newBookingParams.start as Date, end: newBookingParams.end as Date },
+      bookingsForRoomToday || []
+    );
+
     console.info({ bookingsForRoomToday, conflictingBookings })
 
     if (conflictError) {

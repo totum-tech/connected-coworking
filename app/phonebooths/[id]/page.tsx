@@ -30,7 +30,7 @@ async function fetchBookings(id: string) {
 }
 
 const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date }) => {
-  const calendarRef = useRef<HTMLElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const [calendarHeight, setCalendarHeight] = useState(0);
   const [timeIndicatorPosition, setTimeIndicatorPosition] = useState(0);
   const hours = Array.from({ length: 13 }, (_, i) => i + 6); // 6 AM to 5 PM
@@ -74,9 +74,9 @@ const Calendar = ({ events, currentDate }: { events: any[], currentDate: Date })
 
   return (
     <div className="bg-white rounded-xl drop-shadow-lg">
-      <div className="p-4 bg-gray-100 border-b">
+      <div className="p-4 bg-gray-200 border-b overflow-hidden rounded-t-xl">
         <h2 className="text-xl font-semibold">{format(currentDate, 'MMMM d, yyyy')}</h2>
-        <p className="text-gray-600">{format(currentDate, 'EEEE')}</p>
+        <p className="text-gray-900">{format(currentDate, 'EEEE')}</p>
       </div>
 
       <div ref={calendarRef} className="grid grid-cols-[4rem_1fr] grid-rows-[repeat(52,1.24rem)] gap-0 relative">
