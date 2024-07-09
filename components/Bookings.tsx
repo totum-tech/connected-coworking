@@ -1,9 +1,9 @@
 "use client";
 import React, {useEffect, useState} from "react";
 import {WeekView} from '@/components/calendar'
-import {addMinutes, isAfter, isBefore, isFuture, isWeekend} from "date-fns";
+import {addDays, addMinutes, areIntervalsOverlapping, isAfter, isBefore, isFuture, isWeekend} from "date-fns";
 import { useDisclosure } from '@mantine/hooks'
-import {Modal, Button, Title, Textarea, Text, Select} from '@mantine/core'
+import {Modal, Button, Title, Textarea, Text, Select, Drawer} from '@mantine/core'
 import {DateTimePicker, DateValue} from "@mantine/dates";
 import {useSupabase} from "@/utils/supabase/useSupabase";
 
@@ -220,8 +220,41 @@ export default function Bookings() {
     open();
   }
 
+  function getConflictingBookings(newBookingParams: { resourceId: number | null, start: Date, end: Date }, bookings: any[]) {
+    return bookings.filter(booking => areIntervalsOverlapping(
+      { start: newBookingParams.start, end: newBookingParams.end },
+      { start: new Date(booking.start), end: new Date(booking.end)
+      }));
+  }
+
   async function handleSubmit() {
     if (!supabase) { return; }
+
+    if (newBookingParams.start === null || newBookingParams.end === null) {
+      return;
+    }
+
+    const tomorrow = addDays(new Date(), 1).toISOString();
+    console.info({ start: newBookingParams.start.toISOString(), end: newBookingParams.end.toISOString() })
+    const { data: bookingsForRoomToday, error: conflictError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('resource_id', newBookingParams.resourceId)
+      .gte('end', newBookingParams.start.toISOString())
+      .lte('end', tomorrow)
+
+    const conflictingBookings = getConflictingBookings(newBookingParams, bookingsForRoomToday);
+    console.info({ bookingsForRoomToday, conflictingBookings })
+
+    if (conflictError) {
+      alert('Error checking for conflicts. Please try again.');
+      return;
+    }
+
+    if (conflictingBookings.length > 0) {
+      alert('There is a conflicting booking for this resource and time slot.');
+      return;
+    }
 
     const { data, error } = await supabase
       .from('bookings')
@@ -321,10 +354,10 @@ export default function Bookings() {
         }))
         }
       />
-      <Modal
+      <Drawer
+        position="right"
         onClose={handleClose}
         opened={opened}
-        size="lg"
       >
         {activeForm === 'new' && (
           <NewBookingForm
@@ -343,7 +376,7 @@ export default function Bookings() {
             onCancel={handleClose}
           />
         )}
-      </Modal>
+      </Drawer>
     </div>
 
   );
